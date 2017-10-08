@@ -11,4 +11,10 @@ Tool to perform some basic data augmentation on images.
 ## Status:
 - Mirror flipping implemented
 - Translation implemented
-- In progress
+- Rotation implemented
+- Shear implemented
+- Contrast adjustment implemented
+- Resizing In progress
+
+## Execution:
+TO COME.
