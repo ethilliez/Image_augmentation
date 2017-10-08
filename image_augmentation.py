@@ -1,5 +1,5 @@
-# Idea from: https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 import numpy as np
+import math
 from scipy import ndimage, misc
 import matplotlib.pyplot as plt
 from glob import glob
@@ -33,29 +33,64 @@ class image_augmentation:
         image_trans_up = np.append(image[int(shift*len(image)):,:,:], image[int((1-shift)*len(image)):,:,:], axis = 0)
         return image_trans_left, image_trans_right, image_trans_up, image_trans_down
 
-   # def rotate(self, image, angle):
-   #     image_rotated = 
-   # 	return image_rotated
+    def rotate(self, image, angle):
+        angle = angle*3.14159/180.0
+        image_rotated = np.zeros([len(image),len(image[0]),len(image[0][0])])
+        for chan in range(0,len(image[0][0])):        
+            for x in range(0,len(image)):
+                for y in range(0,len(image[0])):
+                	# Rotate pixels
+                    xpix = x - len(image)/2
+                    ypix = y - len(image[0])/2
+                    newX = int(round(math.cos(angle)*(xpix) + math.sin(angle)*(ypix)))
+                    newY = int(round(-math.sin(angle)*(xpix) + math.cos(angle)*(ypix)))
+                    if(newX <= 0 and newY < 0):
+                        newX2 = newX + int(len(image)/2)
+                        newY2 = newY + int(len(image[0])/2)  
+                    if(newX < 0 and newY >= 0):
+                        newX2 = newX + int(len(image)/2)
+                        newY2 = newY - int(len(image[0])/2)  
+                    if(newX >= 0 and newY > 0):
+                        newX2 = newX - int(len(image)/2)
+                        newY2 = newY - int(len(image[0])/2)
+                    if(newX > 0  and newY <= 0):
+                        newX2 = newX - int(len(image)/2)
+                        newY2 = newY + int(len(image[0])/2)                  
+                    image_rotated[newX2,newY2,chan] = image[x,y,chan]
+                    # Fix lost pixels by correcting with previous pixel
+                    if(chan == len(image[0][0])-1 and np.array_equal(image_rotated[x,y], np.array([0,0,0])) 
+                    	and np.array_equal(image_rotated[x, y-1], np.array([0,0,0])) == False):
+                        image_rotated[x,y] = image_rotated[x, y-1]
+       	return image_rotated
 
-    #def shearing(self, image, factor):
-    # IN PROGRESS
-    #    shear_factor = np.array([[1,0],[factor,1]])
-    #    image_shear = np.zeros(len(image),len(image[0]),len(image[0][0]))
-    #    for chan in image[0][0]:
-    #        for x in image[0]:
-    #    	    for y in image:
-    #                vector = np.array(x,y)
-    #    	    	shear_pixel = np.multiply(shear_factor,vector)
-    #                x_new = shear_pixel[0]
-    #                y_new = shear_pixel[1]
-    #    plt.imshow(image)
-    #    plt.show() 
-    #    plt.imshow(image_shear)
-    #    plt.show()
-    #    print(image.shape)
-    #    print(image_shear.shape)
-    #    exit()
-    #    return image_shear
+    def shearing(self, image, factor, direction='horizontal'):
+        image_shear = np.zeros([len(image),len(image[0]),len(image[0][0])])
+        for chan in range(0,len(image[0][0])):
+            if(direction == "vertical"):
+                for x in range(0,len(image)):
+                    for y in range(0,len(image[0])):
+                        newX = int(round(x + factor*y))
+                        newY = y
+                        if(newX >= len(image)-1): break 
+                        image_shear[newX,newY,chan] = image[x,y,chan]                 
+            elif(direction == "horizontal"):
+                for x in range(0,len(image)):
+                    for y in range(0,len(image[0])):
+                        newX = x
+                        newY = int(round(y + factor*x))
+                        if(newY >= len(image[0])-1): break 
+                        image_shear[newX,newY,chan] = image[x,y,chan] 
+        return image_shear
+
+    # def change_contrast(self, image, factor):
+        #plt.imshow(image)
+        #plt.show() 
+        #plt.imshow(image_shear)
+        #plt.show()
+        #print(image.shape)
+        #print(image_shear.shape)
+        #exit()
+    #	return image_contrast
 
 	# def resize(self,image,nx,ny):
     #   return
@@ -64,13 +99,11 @@ class image_augmentation:
     	for i in range(0,len(image)):
     	    misc.imsave(ori_file[:-4]+number[i]+".jpg",image[i])
 
-    def perform_augmentation(self, folder):
+    def perform_augmentation(self):
     	# List all images within folder
-        path = self.data_path + folder
-        filelist = glob(path+'*')
+        filelist = glob(self.data_path+'*')
         logger.info(filelist)
         # for each image
-        i = 0
         for file in filelist:
         	# Read image
             image = self._read_data(file)
@@ -83,9 +116,18 @@ class image_augmentation:
             # Perform translation on mirror image and save
             image_trans_left, image_trans_right, image_trans_up, image_trans_down = self.translation(image_mirror, 0.1)
             self.save_image([image_trans_left, image_trans_right, image_trans_up, image_trans_down],file,["f","g","h","i"])
+            # Perform rotation on original image and save
+            image_rotated = self.rotate(image,15.0)
+            self.save_image([image_rotated],file,["j"])
+            # Perform rotation on mirror image and save
+            image_rotated = self.rotate(image_mirror,15.0)
+            self.save_image([image_rotated],file,["k"])
             # Perform shearing on original image and save
-            #image_shear = self.shearing(image, 3)
-            #self.save_image([image_shear],file,["j"])
+            image_shear = self.shearing(image, 0.12)
+            self.save_image([image_shear],file,["l"])
+            # Perform shearing on mirror image and save
+            image_shear = self.shearing(image_mirror, 0.12)
+            self.save_image([image_shear],file,["m"])
             # Limit to the first image for testing
             if(self.test):
                 logger.info("Stopping after the first image.")
@@ -95,4 +137,4 @@ class image_augmentation:
 
 if __name__ == '__main__':
 	process = image_augmentation()
-	process.perform_augmentation('Elo/')
+	process.perform_augmentation()
