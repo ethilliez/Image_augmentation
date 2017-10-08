@@ -82,15 +82,11 @@ class image_augmentation:
                         image_shear[newX,newY,chan] = image[x,y,chan] 
         return image_shear
 
-    # def change_contrast(self, image, factor):
-        #plt.imshow(image)
-        #plt.show() 
-        #plt.imshow(image_shear)
-        #plt.show()
-        #print(image.shape)
-        #print(image_shear.shape)
-        #exit()
-    #	return image_contrast
+    def change_contrast(self, image, factor_gain, factor_bias):
+        image_contrast = image
+        for chan in range(0,len(image[0][0])):
+            image_contrast[:,:,chan] = factor_gain*image[:,:,chan]+factor_bias
+        return image_contrast
 
 	# def resize(self,image,nx,ny):
     #   return
@@ -98,6 +94,10 @@ class image_augmentation:
     def save_image(self, image, ori_file, number):
     	for i in range(0,len(image)):
     	    misc.imsave(ori_file[:-4]+number[i]+".jpg",image[i])
+
+    def plot_image(self, image):
+        plt.imshow(image)
+        plt.show() 
 
     def perform_augmentation(self):
     	# List all images within folder
@@ -128,6 +128,12 @@ class image_augmentation:
             # Perform shearing on mirror image and save
             image_shear = self.shearing(image_mirror, 0.12)
             self.save_image([image_shear],file,["m"])
+            # Perform change contrast on original image and save
+            image_contrast = self.change_contrast(image, 0.5, 25)
+            self.save_image([image_contrast],file,["n"])
+            # Perform change contrast on mirror image and save
+            image_contrast = self.change_contrast(image_mirror, 0.5, 25)
+            self.save_image([image_contrast],file,["o"])
             # Limit to the first image for testing
             if(self.test):
                 logger.info("Stopping after the first image.")
