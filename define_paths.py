@@ -1,2 +1,2 @@
 class paths:
-    DATA_PATH='../../Data/Elo/'
+    DATA_PATH='example/'

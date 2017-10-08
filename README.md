@@ -1,8 +1,9 @@
 # Image_augmentation
-## !! Work In Progress !!
+![Alt Text](https://raw.github.com/ethilliez/Image_augmentation/master/example/example.jpeg "Example of transformations" )
 
 ## Description:
-Tool to perform some basic data augmentation on images.
+Tool to augmentate images data by performing basic geometric transformations. The example above displays translation, rotation, contrast adjustement and image shearing.
+
 
 ## Personal development goals:
 - Practising basic image manipulation techniques without using libraries.
