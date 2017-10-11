@@ -1,6 +1,8 @@
 import numpy as np
 import math
 from scipy import ndimage, misc
+from scipy.interpolate import interp1d
+import re
 import matplotlib.pyplot as plt
 from glob import glob
 from define_paths import paths
@@ -13,6 +15,7 @@ logger = logging.getLogger(__name__)
 class image_augmentation:
     def __init__(self):
         self.data_path = paths.DATA_PATH
+        self.output_path = paths.OUTPUT_PATH
         self.test = False
 
     def _read_data(self, file):
@@ -83,30 +86,72 @@ class image_augmentation:
         return image_shear
 
     def change_contrast(self, image, factor_gain, factor_bias):
-        image_contrast = image
+        image_contrast = np.zeros([len(image),len(image[0]),len(image[0][0])])
         for chan in range(0,len(image[0][0])):
-            image_contrast[:,:,chan] = factor_gain*image[:,:,chan]+factor_bias
+            image_contrast[:,:,chan] = (chan+1)*factor_gain*image[:,:,chan]+factor_bias
         return image_contrast
 
-	# def resize(self,image,nx,ny):
-    #   return
+    def resize_image(self, image, npix):
+        resized_image_l = []
+        # resize x axis
+        for c in range(0,len(image[0][0])):
+            for y in range(0,len(image)):
+                f = interp1d(np.arange(0,len(image[0])), image[y,:,c], kind='cubic')
+                xnew = np.linspace(0, len(image[0])-1, num=npix)
+                if(y==0): 
+                	resized_image_c = f(xnew)
+                else:
+                    resized_image_c = np.vstack((resized_image_c,f(xnew)))
+            resized_image_l.append(resized_image_c)
+        resized_image_a = np.dstack([resized_image_l[0],resized_image_l[1],resized_image_l[2]])
+        # resize y axis
+        resized_image_l = []
+        for c in range(0,len(image[0][0])):
+            for x in range(0,len(resized_image_a[0])):
+                f = interp1d(np.arange(0,len(resized_image_a)), resized_image_a[:,x,c], kind='cubic')
+                xnew = np.linspace(0, len(resized_image_a)-1, num=npix)
+                if(x==0): 
+                	resized_image_c = f(xnew)
+                else:
+                    resized_image_c = np.vstack((resized_image_c,f(xnew)))
+            resized_image_l.append(resized_image_c)
+        resized_image = np.dstack([resized_image_l[0],resized_image_l[1],resized_image_l[2]])
+        # Fix image orientation
+        for i in range(0,3):
+            resized_image=np.rot90(resized_image)
+        return resized_image
 
     def save_image(self, image, ori_file, number):
-    	for i in range(0,len(image)):
-    	    misc.imsave(ori_file[:-4]+number[i]+".jpg",image[i])
+        # Use Regular Expression to get the name of the Data folder
+        count_slash = self.data_path.count('/')
+        pattern=""
+        for i in range(count_slash-1):
+            pattern=pattern+".*/"
+        pattern=pattern+"(.*?)/"
+        # Save the image using the Data folder as name
+        for i in range(0,len(image)):
+            misc.imsave(self.output_path+re.search(pattern,self.data_path).group(1)
+                       +"_"+number[i]+".jpg",image[i])
 
     def plot_image(self, image):
         plt.imshow(image)
         plt.show() 
 
-    def perform_augmentation(self):
+    def perform_augmentation(self,npix):
     	# List all images within folder
-        filelist = glob(self.data_path+'*')
-        logger.info(filelist)
-        # for each image
+        filelist = glob(self.data_path+'*[a-zA-Z0-9].*')
+        logger.info(("All images to be augmented are: ", filelist))
+        #--
+        # Set size for all images
+        logger.info(("Image size: ",npix))
+        #--
+        # Tranformation for each image
         for file in filelist:
-        	# Read image
+            logger.info(("Performing transformation for image: ", file))
+            # Read image and resize it
             image = self._read_data(file)
+            image = self.resize_image(image, npix)
+            self.save_image([image],file,["z"])
             # Perform mirror rotation and save
             image_mirror = self.mirror_rotate(image)
             self.save_image([image_mirror],file,["a"])
@@ -129,10 +174,10 @@ class image_augmentation:
             image_shear = self.shearing(image_mirror, 0.12)
             self.save_image([image_shear],file,["m"])
             # Perform change contrast on original image and save
-            image_contrast = self.change_contrast(image, 0.5, 25)
+            image_contrast = self.change_contrast(image, 0.33, 15)
             self.save_image([image_contrast],file,["n"])
             # Perform change contrast on mirror image and save
-            image_contrast = self.change_contrast(image_mirror, 0.5, 25)
+            image_contrast = self.change_contrast(image_mirror, 0.33, 15)
             self.save_image([image_contrast],file,["o"])
             # Limit to the first image for testing
             if(self.test):
@@ -140,7 +185,6 @@ class image_augmentation:
                 exit()
 
 
-
 if __name__ == '__main__':
 	process = image_augmentation()
-	process.perform_augmentation()
+	process.perform_augmentation(npix=400)
