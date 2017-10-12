@@ -1,6 +1,7 @@
 .DS_Store
 example/.DS_Store
 example/nolib/.DS_Store
+example/lib/.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
