@@ -1,5 +1,6 @@
 # Image_augmentation
 ![Alt Text 1](https://raw.github.com/ethilliez/Image_augmentation/master/example/nolib/example_b.jpg)![Alt Text 2](https://raw.github.com/ethilliez/Image_augmentation/master/example/nolib/example_k.jpg)
+
 ![Alt Text 3](https://raw.github.com/ethilliez/Image_augmentation/master/example/nolib/example_n.jpg)![Alt Text 4](https://raw.github.com/ethilliez/Image_augmentation/master/example/nolib/example_l.jpg)
 
 ## Description:
@@ -23,8 +24,10 @@ For both scripts with and without librairies:
 The main librairies required are: `numpy` and `skimage`,`scipy`. They can be installed using `pip install` or `conda install`.
 
 ## Execution:
-1) Firstly, in `define_paths.py`:
+1) Firstly, in `define_parameters.py`:
 - update the path to the folder containing the original images: `DATA_PATH`
 - update the path to the folder containing the output: `OUTPUT_PATH`
+- select the parameters' values for each transformation (Translation, Rotation, Shear, Contrast & Resizing)
+
 2) Executing the script written without libraries: `python3 image_augmentation_nolib.py`
 3) Executing the script written with librairies: `python3 image_augmentation_wlib.py`
