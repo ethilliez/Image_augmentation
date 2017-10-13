@@ -125,17 +125,17 @@ class image_augmentation:
             resized_image=np.rot90(resized_image)
         return resized_image
 
-    def save_image(self, image, ori_file, number):
+    def save_image(self, image, ori_file, suffixe):
         # Use Regular Expression to get the name of the Data folder
-        count_slash = self.data_path.count('/')
+        count_slash = ori_file.count('/')
         pattern=""
         for i in range(count_slash-1):
             pattern=pattern+".*/"
-        pattern=pattern+"(.*?)/"
+        pattern=pattern+"(.*?)."+ori_file[-3]
         # Save the image using the Data folder as name
         for i in range(0,len(image)):
-            misc.imsave(self.output_path+re.search(pattern,self.data_path).group(1)
-                       +"_"+number[i]+".jpg",image[i])
+            misc.imsave(self.output_path+re.search(pattern, ori_file).group(1)
+                       +"_"+suffixe[i]+".jpg",image[i])
 
     def plot_image(self, image):
         plt.imshow(image)
