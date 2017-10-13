@@ -5,7 +5,7 @@ from skimage import transform, exposure
 import re
 import matplotlib.pyplot as plt
 from glob import glob
-from define_paths import paths
+from define_parameters import paths, parameters
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -16,6 +16,10 @@ class image_augmentation:
     def __init__(self):
         self.data_path = paths.DATA_PATH
         self.output_path = paths.OUTPUT_PATH
+        self.translation = parameters.TRANSLATION
+        self.rotation = parameters.ROTATION
+        self.shearing =  parameters.SHEARING
+        self.contrast = parameters.CONTRAST
         self.test = False
 
     def _read_data(self, file):
@@ -29,7 +33,7 @@ class image_augmentation:
             image_mirror = image[::-1,:,:]
         return image_mirror
 
-    def translation(self, image, shift):
+    def translate(self, image, shift):
         factor = int(shift*len(image))
         affine_tf = transform.AffineTransform(scale=(1.0,1.0),translation=(-factor,0))
         image_trans_left = transform.warp(image, inverse_map=affine_tf)
@@ -45,7 +49,7 @@ class image_augmentation:
         image_rotated = ndimage.rotate(image, angle, reshape=False)
        	return image_rotated
 
-    def shearing(self, image, factor, direction='horizontal'):
+    def shear(self, image, factor, direction='horizontal'):
         affine_tf = transform.AffineTransform(shear=factor)
         # Apply transform to image data
         image_shear = transform.warp(image, inverse_map=affine_tf)    
@@ -94,28 +98,28 @@ class image_augmentation:
             image_mirror = self.mirror_rotate(image)
             self.save_image([image_mirror],file,["a"])
             # Perform translation on original image and save
-            image_trans_left, image_trans_right, image_trans_up, image_trans_down = self.translation(image, 0.1)
+            image_trans_left, image_trans_right, image_trans_up, image_trans_down = self.translate(image, self.translation)
             self.save_image([image_trans_left, image_trans_right, image_trans_up, image_trans_down],file,["b","c","d","e"])
             # Perform translation on mirror image and save
-            image_trans_left, image_trans_right, image_trans_up, image_trans_down = self.translation(image_mirror, 0.1)
+            image_trans_left, image_trans_right, image_trans_up, image_trans_down = self.translate(image_mirror, self.translation)
             self.save_image([image_trans_left, image_trans_right, image_trans_up, image_trans_down],file,["f","g","h","i"])
             # Perform rotation on original image and save
-            image_rotated = self.rotate(image,15.0)
+            image_rotated = self.rotate(image, self.rotation)
             self.save_image([image_rotated],file,["j"])
             # Perform rotation on mirror image and save
-            image_rotated = self.rotate(image_mirror,15.0)
+            image_rotated = self.rotate(image_mirror, self.rotation)
             self.save_image([image_rotated],file,["k"])
             # Perform shearing on original image and save
-            image_shear = self.shearing(image, 0.12)
+            image_shear = self.shear(image, self.shearing)
             self.save_image([image_shear],file,["l"])
             # Perform shearing on mirror image and save
-            image_shear = self.shearing(image_mirror, 0.12)
+            image_shear = self.shear(image_mirror, self.shearing)
             self.save_image([image_shear],file,["m"])
             # Perform change contrast on original image and save
-            image_contrast = self.change_contrast(image, 0.33, 15)
+            image_contrast = self.change_contrast(image, self.contrast[0], self.contrast[1])
             self.save_image([image_contrast],file,["n"])
             # Perform change contrast on mirror image and save
-            image_contrast = self.change_contrast(image_mirror, 0.33, 15)
+            image_contrast = self.change_contrast(image_mirror, self.contrast[0], self.contrast[1])
             self.save_image([image_contrast],file,["o"])
             # Limit to the first image for testing
             if(self.test):
@@ -125,4 +129,4 @@ class image_augmentation:
 
 if __name__ == '__main__':
 	process = image_augmentation()
-	process.perform_augmentation(npix=400)
+	process.perform_augmentation(npix = parameters.SIZE_IMAGE)
